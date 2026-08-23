@@ -1,0 +1,64 @@
+{
+  "hr_policies": [
+    {
+      "question": "How many paid leave days do I get per year?",
+      "answer": "Full-time employees get 21 paid leave days (PL) annually. These are exclusive of public holidays and casual leave. Leave unused by March 31st carries forward up to 10 days max into the next financial year.",
+      "category": "leave_policy",
+      "priority": "high"
+    },
+    {
+      "question": "What's the notice period if I want to resign?",
+      "answer": "The standard notice period is 30 days from the date of resignation letter. Managers may agree to a shorter period in mutual consultation. Payment in lieu of notice is available per company policy.",
+      "category": "employment_terms",
+      "priority": "high"
+    },
+    {
+      "question": "How do I submit an expense reimbursement?",
+      "answer": "Submit receipts via the Finance portal within 30 days of the expense. Include: receipt image, amount, category (travel, meals, supplies), project/cost center. Approved within 5-7 business days. Limit: ₹10,000 per single expense without manager approval.",
+      "category": "reimbursement",
+      "priority": "high"
+    },
+    {
+      "question": "What health insurance benefits do employees get?",
+      "answer": "All employees + spouse + 2 dependent children covered under group health insurance. Coverage: ₹25,00,000 annually. Maternity, dental, and vision add-ons available. Enroll during onboarding within 14 days of joining.",
+      "category": "benefits",
+      "priority": "high"
+    },
+    {
+      "question": "What's the paternity leave policy?",
+      "answer": "Eligible male employees get 10 days of paid paternity leave within 6 months of child's birth. Additional 5 days available as unpaid optional leave.",
+      "category": "leave_policy",
+      "priority": "medium"
+    },
+    {
+      "question": "How is work from home approved?",
+      "answer": "Submit WFH request via HR portal minimum 48 hours in advance. Managers typically approve up to 2 days per week. During monsoon/lockdown/emergencies, company may mandate WFH. Check with your manager for team-specific policies.",
+      "category": "work_arrangements",
+      "priority": "medium"
+    },
+    {
+      "question": "What's the professional development budget?",
+      "answer": "Employees get ₹50,000 annually for training, certifications, or conferences. Budget allocated April–March. Requires manager pre-approval. Post-training, share learnings via internal workshop or lunch-and-learn session.",
+      "category": "benefits",
+      "priority": "medium"
+    },
+    {
+      "question": "How do I request flexible working hours?",
+      "answer": "Discuss with your manager to set a flexible schedule within core hours (11am–3pm). Approval in writing via HR. Office attendance required minimum 3 days/week unless otherwise approved.",
+      "category": "work_arrangements",
+      "priority": "low"
+    },
+    {
+      "question": "What happens if I have a workplace grievance?",
+      "answer": "Report to HR or your manager (or ombudsman if directly involved). Formal written complaint triggers investigation within 14 days. Confidentiality maintained. Anonymous reporting option available via ethics hotline: grievance@company.com",
+      "category": "policies",
+      "priority": "medium"
+    },
+    {
+      "question": "When do I get my performance bonus/incentive?",
+      "answer": "Variable incentive (if applicable) paid annually in March based on performance rating. Eligibility: minimum 6 months tenure, active employment on payout date. Details in offer letter or compensation structure document.",
+      "category": "compensation",
+      "priority": "high"
+    }
+  ]
+}
