@@ -118,7 +118,47 @@ oboardops/
 │
 └── LICENSE
 ```
+---
 
+## 🏗️ Design / Architecture
+
+oboardops uses a modular AI-agent architecture where a central agent orchestrates specialized onboarding tools. Each tool is responsible for a specific part of the onboarding workflow, making the system easier to test, maintain, and extend.
+
+### Core Components
+
+- **Agent Orchestrator** — Receives the employee's request and determines which onboarding tool should handle it.
+- **HR Q&A Tool** — Answers common HR policy questions using the HR knowledge base.
+- **Checklist Tool** — Generates a personalized onboarding checklist based on the employee's role and department.
+- **Scheduling Tool** — Generates a structured first-week onboarding schedule based on the employee's start date.
+- **Tracker Tool** — Records onboarding tasks and their status in the shared tracking system.
+
+### Tool Flow
+
+```text
+                         Employee Request
+                                |
+                                v
+                       Agent Orchestrator
+                                |
+              +-----------------+-----------------+
+              |                 |                 |
+              v                 v                 v
+         HR Q&A Tool      Checklist Tool    Scheduling Tool
+              |                 |                 |
+              v                 v                 v
+       HR Knowledge Base    Role + Department   Start Date
+                                |                 |
+                                v                 v
+                           Personalized      First-Week
+                            Checklist         Schedule
+                                |
+                                +--------+--------+
+                                         |
+                                         v
+                                  Onboarding Output
+                                         |
+                                         v
+                                  Tracker Tool
 ---
 
 ## 🚀 Current Progress
