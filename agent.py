@@ -2,20 +2,15 @@ from strands import Agent
 from tools.hr_qa_wrapper import answer_hr_question
 from tools.checklist_tool import generate_checklist
 from tools.scheduling_tool import generate_schedule
+from tools.tracker_tool import log_status
 
-agent = Agent(tools=[answer_hr_question, generate_checklist, generate_schedule])
+agent = Agent(tools=[answer_hr_question, generate_checklist, generate_schedule, log_status])
 
-# Test 1: HR question
-print("=== Test 1: HR Question ===")
-response1 = agent("How many paid leave days do I get per year?")
-print(response1)
-
-# Test 2: Checklist request
-print("\n=== Test 2: Checklist Request ===")
-response2 = agent("Generate an onboarding checklist for a Software Engineer in the Engineering department")
-print(response2)
-
-# Test 3: Scheduling request
-print("\n=== Test 3: Scheduling Request ===")
-response3 = agent("Create a first-week schedule for someone starting on 2026-09-01")
-print(response3)
+print("=== Full End-to-End Test ===")
+response = agent(
+    "A new hire named Rajesh Kumar is joining as a Software Engineer in Engineering, "
+    "starting 2026-09-08. Please generate his onboarding checklist, tell him how many "
+    "paid leave days he gets, create his first-week schedule, and log that his "
+    "'Laptop provisioned' task is In Progress, owned by IT."
+)
+print(response)
