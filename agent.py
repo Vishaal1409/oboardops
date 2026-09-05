@@ -6,11 +6,10 @@ from tools.tracker_tool import log_status
 
 agent = Agent(tools=[answer_hr_question, generate_checklist, generate_schedule, log_status])
 
-print("=== Full End-to-End Test ===")
+print("=== Edge Case Test: Vague Role + Missing Info ===")
 response = agent(
-    "A new hire named Rajesh Kumar is joining as a Software Engineer in Engineering, "
-    "starting 2026-09-08. Please generate his onboarding checklist, tell him how many "
-    "paid leave days he gets, create his first-week schedule, and log that his "
-    "'Laptop provisioned' task is In Progress, owned by IT."
+    "We have a new hire starting soon — just tell them about our leave policy, "
+    "give them a basic onboarding checklist for a general Marketing role, "
+    "and log that their 'Account setup' task is Not Started, owner unclear."
 )
 print(response)
