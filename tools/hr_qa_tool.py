@@ -19,6 +19,18 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_KNOWLEDGE_BASE_PATH = PROJECT_ROOT / "hr_qa_knowledge_base.json"
 
+PRIORITY_RANK = {"high": 3, "medium": 2, "low": 1}
+CONFIDENCE_TIE_WINDOW = 0.05
+GENERIC_LEAVE_TERMS = ("leave", "pto", "vacation", "time off", "time-off")
+SPECIFIC_LEAVE_TERMS = (
+    "paternity",
+    "maternity",
+    "parental",
+    "father",
+    "dad",
+    "newborn",
+)
+
 
 class HRQATool:
     """HR Policy Question & Answer Tool."""
@@ -71,9 +83,42 @@ class HRQATool:
         matches = sum(1 for word in query_words if word in policy_text)
         return min(0.15, matches * 0.05)
 
+    def _priority_rank(self, policy: Dict[str, Any]) -> int:
+        """Map knowledge-base priority strings to a sortable rank."""
+        return PRIORITY_RANK.get(str(policy.get("priority") or "").lower(), 0)
+
+    def _generic_leave_boost(self, query: str, policy: Dict[str, Any]) -> float:
+        """
+        Weight generic leave questions toward the high-priority annual leave policy.
+
+        SequenceMatcher prefers 'paternity leave policy' for queries like
+        'leave policy' because the wording is closer. That is wrong for
+        general questions. Specific queries (paternity/maternity) get no boost.
+        """
+        query_lower = query.lower()
+        if any(term in query_lower for term in SPECIFIC_LEAVE_TERMS):
+            return 0.0
+        if not any(term in query_lower for term in GENERIC_LEAVE_TERMS):
+            return 0.0
+        if str(policy.get("category") or "").lower() != "leave_policy":
+            return 0.0
+        if self._priority_rank(policy) >= PRIORITY_RANK["high"]:
+            return 0.45
+        return 0.0
+
+    def _score_policy(self, question: str, policy: Dict[str, Any]) -> float:
+        """Combined similarity, keyword, and priority-aware topic score."""
+        score = self._similarity_score(question, policy.get("question", ""))
+        score += self._keyword_boost(question, policy)
+        score += self._generic_leave_boost(question, policy)
+        return score
+
     def search(self, question: str, threshold: float = 0.4) -> Optional[Dict[str, Any]]:
         """
         Search for the best matching HR policy answer.
+
+        When multiple policies score within CONFIDENCE_TIE_WINDOW (0.05) of
+        the top score, the higher knowledge-base priority wins (high > medium > low).
 
         Args:
             question: Employee's question.
@@ -85,28 +130,34 @@ class HRQATool:
         if not question or not isinstance(question, str):
             return None
 
-        best_match: Optional[Dict[str, Any]] = None
-        best_score = threshold
-
+        scored: List[tuple[float, Dict[str, Any]]] = []
         for policy in self.policies:
-            policy_question = policy.get("question", "")
-            score = self._similarity_score(question, policy_question)
-            score += self._keyword_boost(question, policy)
+            score = self._score_policy(question, policy)
+            if score > threshold:
+                scored.append((score, policy))
 
-            if score > best_score:
-                best_score = score
-                best_match = policy
+        if not scored:
+            return None
 
-        if best_match:
-            return {
-                "question": best_match.get("question"),
-                "answer": best_match.get("answer"),
-                "category": best_match.get("category"),
-                "priority": best_match.get("priority"),
-                "confidence": round(min(best_score, 1.0), 2),
-            }
+        top_score = max(score for score, _ in scored)
+        close_matches = [
+            (score, policy)
+            for score, policy in scored
+            if top_score - score <= CONFIDENCE_TIE_WINDOW
+        ]
+        close_matches.sort(
+            key=lambda item: (self._priority_rank(item[1]), item[0]),
+            reverse=True,
+        )
+        best_score, best_match = close_matches[0]
 
-        return None
+        return {
+            "question": best_match.get("question"),
+            "answer": best_match.get("answer"),
+            "category": best_match.get("category"),
+            "priority": best_match.get("priority"),
+            "confidence": round(min(best_score, 1.0), 2),
+        }
 
     def search_by_category(self, category: str) -> List[Dict[str, Any]]:
         """Get all policies in a specific category."""
