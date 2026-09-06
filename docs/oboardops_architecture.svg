@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="1000" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <style>
+      .title { font-size: 28px; font-weight: bold; fill: #1a1a1a; }
+      .subtitle { font-size: 16px; fill: #666666; }
+      .section-title { font-size: 14px; font-weight: bold; fill: #ffffff; }
+      .box-title { font-size: 13px; font-weight: bold; fill: #1a1a1a; }
+      .box-text { font-size: 11px; fill: #333333; }
+      .small-text { font-size: 10px; fill: #555555; }
+      .arrow-label { font-size: 10px; fill: #666666; font-style: italic; }
+      
+      .solid-box { fill: #e8f5e9; stroke: #2e7d32; stroke-width: 2; }
+      .dashed-box { fill: #fff3e0; stroke: #f57c00; stroke-width: 2; stroke-dasharray: 4,4; }
+      .input-box { fill: #e3f2fd; stroke: #1976d2; stroke-width: 2; }
+      .storage-box { fill: #fce4ec; stroke: #c2185b; stroke-width: 2; }
+      .output-box { fill: #f3e5f5; stroke: #6a1b9a; stroke-width: 2; }
+      .header-bar { fill: #2e7d32; }
+      .header-bar-dashed { fill: #f57c00; }
+      
+      .arrow { stroke: #333333; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .dashed-arrow { stroke: #f57c00; stroke-width: 2; fill: none; stroke-dasharray: 4,4; marker-end: url(#arrowhead-dashed); }
+      .group-box { fill: none; stroke: #cccccc; stroke-width: 1; stroke-dasharray: 2,2; }
+    </style>
+    
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333333" />
+    </marker>
+    
+    <marker id="arrowhead-dashed" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#f57c00" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="600" y="40" text-anchor="middle" class="title">OnboardOps — AI-Assisted Onboarding Architecture</text>
+  <text x="600" y="62" text-anchor="middle" class="subtitle">Modular onboarding tools for HR, employees, and managers</text>
+  
+  <!-- ============ INPUT LAYER ============ -->
+  <rect x="350" y="100" width="500" height="60" class="input-box" rx="4"/>
+  <rect x="350" y="100" width="500" height="25" class="header-bar" rx="4,4,0,0"/>
+  <text x="600" y="118" text-anchor="middle" class="section-title">Request Layer</text>
+  <text x="600" y="145" text-anchor="middle" class="box-text">Employee / HR / Manager Request</text>
+  
+  <!-- Arrow down to Agent -->
+  <path d="M 600 160 L 600 200" class="arrow"/>
+  
+  <!-- ============ AGENT LAYER ============ -->
+  <g id="agent-section">
+    <rect x="250" y="200" width="700" height="100" class="dashed-box" rx="4"/>
+    <rect x="250" y="200" width="700" height="30" class="header-bar-dashed" rx="4,4,0,0"/>
+    <text x="600" y="222" text-anchor="middle" class="section-title">Orchestration Layer</text>
+    
+    <rect x="270" y="235" width="660" height="55" fill="none" stroke="#f57c00" stroke-width="1"/>
+    <text x="280" y="255" class="box-title">Strands Agent</text>
+    <text x="280" y="272" class="small-text">Routes onboarding requests to specialized tools</text>
+    <text x="280" y="283" class="small-text">⚠ Tools integration planned — not currently wired into agent.py</text>
+  </g>
+  
+  <!-- Arrows down to tools -->
+  <path d="M 380 300 L 380 340" class="dashed-arrow"/>
+  <path d="M 540 300 L 540 340" class="dashed-arrow"/>
+  <path d="M 700 300 L 700 340" class="dashed-arrow"/>
+  <path d="M 860 300 L 860 340" class="dashed-arrow"/>
+  
+  <!-- ============ TOOL LAYER ============ -->
+  <!-- HR Q&A Tool -->
+  <g id="tool-hrqa">
+    <rect x="300" y="340" width="200" height="120" class="solid-box" rx="4"/>
+    <rect x="300" y="340" width="200" height="25" class="header-bar" rx="4,4,0,0"/>
+    <text x="400" y="358" text-anchor="middle" class="section-title">HR Q&A Tool</text>
+    
+    <text x="310" y="380" class="box-text">Input:</text>
+    <text x="315" y="393" class="box-text">HR policy question</text>
+    
+    <text x="310" y="420" class="box-text">Data Source:</text>
+    <text x="315" y="433" class="box-text">hr_qa_knowledge_base.json</text>
+    
+    <text x="310" y="452" class="small-text">Fuzzy matching search</text>
+  </g>
+  
+  <!-- Checklist Tool -->
+  <g id="tool-checklist">
+    <rect x="460" y="340" width="200" height="120" class="solid-box" rx="4"/>
+    <rect x="460" y="340" width="200" height="25" class="header-bar" rx="4,4,0,0"/>
+    <text x="560" y="358" text-anchor="middle" class="section-title">Checklist Tool</text>
+    
+    <text x="470" y="380" class="box-text">Input:</text>
+    <text x="475" y="393" class="box-text">Role + Department</text>
+    
+    <text x="470" y="420" class="box-text">Output:</text>
+    <text x="475" y="433" class="box-text">Onboarding checklist</text>
+    
+    <text x="470" y="452" class="small-text">🔧 Placeholder implementation</text>
+  </g>
+  
+  <!-- Scheduling Tool -->
+  <g id="tool-scheduling">
+    <rect x="620" y="340" width="200" height="120" class="solid-box" rx="4"/>
+    <rect x="620" y="340" width="200" height="25" class="header-bar" rx="4,4,0,0"/>
+    <text x="720" y="358" text-anchor="middle" class="section-title">Scheduling Tool</text>
+    
+    <text x="630" y="380" class="box-text">Input:</text>
+    <text x="635" y="393" class="box-text">Start Date</text>
+    
+    <text x="630" y="420" class="box-text">Output:</text>
+    <text x="635" y="433" class="box-text">First-week schedule</text>
+    
+    <text x="630" y="452" class="small-text">Day 1–5 structured agenda</text>
+  </g>
+  
+  <!-- Tracker Tool -->
+  <g id="tool-tracker">
+    <rect x="780" y="340" width="200" height="120" class="solid-box" rx="4"/>
+    <rect x="780" y="340" width="200" height="25" class="header-bar" rx="4,4,0,0"/>
+    <text x="880" y="358" text-anchor="middle" class="section-title">Tracker Tool</text>
+    
+    <text x="790" y="378" class="small-text">Functions:</text>
+    <text x="795" y="391" class="small-text">• log_status()</text>
+    <text x="795" y="405" class="small-text">• get_employee_tasks()</text>
+    <text x="795" y="419" class="small-text">• update_task_status()</text>
+    <text x="795" y="433" class="small-text">• get_all_tasks()</text>
+    
+    <text x="790" y="452" class="small-text">4/4 mocked tests pass</text>
+  </g>
+  
+  <!-- Arrows down to Google Sheets -->
+  <path d="M 400 460 L 400 520" class="arrow"/>
+  <path d="M 560 460 L 560 520" class="arrow"/>
+  <path d="M 720 460 L 720 520" class="arrow"/>
+  <path d="M 880 460 L 880 520" class="arrow"/>
+  
+  <!-- ============ STORAGE LAYER ============ -->
+  <g id="storage">
+    <rect x="250" y="520" width="700" height="150" class="storage-box" rx="4"/>
+    <rect x="250" y="520" width="700" height="28" class="header-bar" rx="4,4,0,0"/>
+    <text x="600" y="541" text-anchor="middle" class="section-title">Google Sheets</text>
+    
+    <!-- Table headers -->
+    <text x="270" y="575" class="box-title">Employee</text>
+    <text x="370" y="575" class="box-title">Role</text>
+    <text x="460" y="575" class="box-title">Task</text>
+    <text x="590" y="575" class="box-title">Status</text>
+    <text x="700" y="575" class="box-title">Owner</text>
+    
+    <!-- Table lines -->
+    <line x1="260" y1="580" x2="930" y2="580" stroke="#c2185b" stroke-width="1"/>
+    
+    <!-- Sample data row 1 -->
+    <text x="270" y="600" class="small-text">Rajesh Kumar</text>
+    <text x="370" y="600" class="small-text">Software Engineer</text>
+    <text x="460" y="600" class="small-text">Laptop provisioned</text>
+    <text x="590" y="600" class="small-text">Completed</text>
+    <text x="700" y="600" class="small-text">IT</text>
+    
+    <!-- Sample data row 2 -->
+    <text x="270" y="620" class="small-text">Rajesh Kumar</text>
+    <text x="370" y="620" class="small-text">Software Engineer</text>
+    <text x="460" y="620" class="small-text">HR orientation scheduled</text>
+    <text x="590" y="620" class="small-text">In Progress</text>
+    <text x="700" y="620" class="small-text">HR</text>
+    
+    <line x1="260" y1="625" x2="930" y2="625" stroke="#c2185b" stroke-width="1"/>
+    
+    <text x="270" y="645" class="small-text">Shared backend for task tracking</text>
+    <text x="270" y="658" class="small-text">⚠ Integration test requires credentials.json (not configured)</text>
+  </g>
+  
+  <!-- Arrow down to Visibility -->
+  <path d="M 600 670 L 600 710" class="arrow"/>
+  
+  <!-- ============ OUTPUT/VISIBILITY LAYER ============ -->
+  <g id="visibility">
+    <rect x="350" y="710" width="500" height="120" class="output-box" rx="4"/>
+    <rect x="350" y="710" width="500" height="28" class="header-bar" rx="4,4,0,0"/>
+    <text x="600" y="731" text-anchor="middle" class="section-title">HR / Manager Visibility</text>
+    
+    <text x="370" y="760" class="box-text">Task Status Overview</text>
+    
+    <text x="380" y="780" class="small-text">🟡 Pending</text>
+    <text x="520" y="780" class="small-text">🔵 In Progress</text>
+    <text x="680" y="780" class="small-text">✅ Completed</text>
+    
+    <text x="370" y="810" class="box-text">Task Ownership</text>
+    <text x="380" y="825" class="small-text">Assigned by Owner (IT, HR, Manager, Admin, etc.)</text>
+  </g>
+  
+  <!-- Legend -->
+  <g id="legend">
+    <text x="50" y="880" class="box-title">Legend:</text>
+    
+    <rect x="50" y="895" width="30" height="20" class="solid-box" rx="2"/>
+    <text x="90" y="910" class="small-text">Implemented component</text>
+    
+    <rect x="350" y="895" width="30" height="20" class="dashed-box" rx="2"/>
+    <text x="390" y="910" class="small-text">Planned/Placeholder component</text>
+    
+    <line x1="700" y1="905" x2="730" y2="905" class="arrow"/>
+    <text x="740" y="910" class="small-text">Current wiring flow</text>
+    
+    <line x1="700" y1="925" x2="730" y2="925" class="dashed-arrow"/>
+    <text x="740" y="930" class="small-text">Planned integration</text>
+  </g>
+  
+  <!-- Footer -->
+  <text x="600" y="975" text-anchor="middle" class="small-text">OnboardOps • Modular onboarding orchestration with Strands Agent</text>
+</svg>

@@ -122,65 +122,103 @@ oboardops/
 
 ## 🏗️ Design / Architecture
 
-oboardops uses a modular AI-agent architecture where a central agent orchestrates specialized onboarding tools. Each tool is responsible for a specific part of the onboarding workflow, making the system easier to test, maintain, and extend.
+oboardops uses a modular AI-agent architecture where a Strands Agent orchestrates four specialized onboarding tools. Each tool is responsible for a specific part of the onboarding workflow, making the system easier to test, maintain, and extend.
+
+See the [**architecture diagram**](docs/oboardops_architecture.svg) for a visual overview of the system.
 
 ### Core Components
 
-- **Agent Orchestrator** — Receives the employee's request and determines which onboarding tool should handle it.
-- **HR Q&A Tool** — Answers common HR policy questions using the HR knowledge base.
-- **Checklist Tool** — Generates a personalized onboarding checklist based on the employee's role and department.
-- **Scheduling Tool** — Generates a structured first-week onboarding schedule based on the employee's start date.
-- **Tracker Tool** — Records onboarding tasks and their status in the shared tracking system.
+#### 1. **Strands Agent (Orchestration Layer)**
+Routes onboarding requests to the appropriate specialized tools. Currently a bare-bones orchestrator — tools are not yet wired into agent.py but the integration points are ready.
+
+#### 2. **Four Specialized Tools**
+
+- **HR Q&A Tool** — Answers common HR policy questions using fuzzy matching against `hr_qa_knowledge_base.json`. Covers leave, benefits, reimbursement, employment terms, and more.
+
+- **Checklist Tool** — Generates a personalized onboarding checklist based on the employee's role and department. *Currently a placeholder implementation ("coming soon").*
+
+- **Scheduling Tool** — Generates a structured first-week onboarding schedule based on the employee's start date. Provides a day-by-day agenda (Days 1–5) with meetings, activities, and milestones.
+
+- **Tracker Tool** — Records, updates, and retrieves onboarding tasks with four core functions:
+  - `log_status()` — Log a new onboarding task with employee name, role, task, status, and owner
+  - `get_employee_tasks()` — Retrieve all tasks assigned to a specific employee
+  - `update_task_status()` — Update the status of an existing task (Not Started, In Progress, Completed, Blocked)
+  - `get_all_tasks()` — View all onboarding tasks across all employees
+  
+  **Status:** Mocked tests pass 4/4. Backend is Google Sheets (credentials.json not configured for live testing).
+
+#### 3. **Google Sheets**
+Shared task tracking sheet with columns:
+- Employee
+- Role
+- Task
+- Status (Pending / In Progress / Completed)
+- Owner (IT, HR, Manager, Admin, etc.)
+
+**Note:** Live integration test requires `credentials.json` — see [SETUP_GOOGLE_SHEETS.md](SETUP_GOOGLE_SHEETS.md) for setup instructions. Current test evidence uses mocked Google Sheets.
+
+#### 4. **HR / Manager Visibility**
+Task status dashboard showing:
+- Pending tasks
+- In-progress work
+- Completed milestones
+- Task ownership and accountability
 
 ### Tool Flow
 
 ```text
-                         Employee Request
-                                |
-                                v
-                       Agent Orchestrator
-                                |
-              +-----------------+-----------------+
-              |                 |                 |
-              v                 v                 v
-         HR Q&A Tool      Checklist Tool    Scheduling Tool
-              |                 |                 |
-              v                 v                 v
-       HR Knowledge Base    Role + Department   Start Date
-                                |                 |
-                                v                 v
-                           Personalized      First-Week
-                            Checklist         Schedule
-                                |
-                                +--------+--------+
-                                         |
-                                         v
-                                  Onboarding Output
-                                         |
-                                         v
-                                  Tracker Tool
+          Employee Request
+               |
+               v
+       Strands Agent
+    (Orchestration Layer)
+               |
+    +----------+---------+---------+
+    |          |         |         |
+    v          v         v         v
+  HR Q&A    Checklist  Scheduling  Tracker
+   Tool      Tool       Tool       Tool
+    |          |         |         |
+    +----------+---------+---------+
+               |
+               v
+         Google Sheets
+      (Task & Status Backend)
+               |
+               v
+    HR/Manager Visibility
+```
+---
+
+## � Documentation
+
+- **[Architecture Diagram](docs/oboardops_architecture.svg)** — Visual overview of the OnboardOps system components and data flow
+- **[Demo Video Script](docs/demo_video_script.md)** — Full hackathon demo script (3–5 minutes) with speaker notes and screen cues
+- **[First-Week Schedule](first_week_schedule.md)** — Structured Day 1–5 onboarding agenda
+- **[Google Sheets Setup](SETUP_GOOGLE_SHEETS.md)** — Instructions for configuring Google Sheets integration (optional)
+
 ---
 
 ## 🚀 Current Progress
 
-### Week 1
+### Hackathon Deliverables
 
-* [x] Define the onboarding problem
-* [x] Identify primary users
-* [x] Structure the first-week onboarding schedule
-* [x] Establish HR policy Q&A knowledge base
-* [x] Set up initial HR Q&A tooling and tests
-* [ ] Continue integrating onboarding workflow components
+* [x] Define the onboarding problem and target users
+* [x] Design modular tool architecture with Strands Agent orchestration
+* [x] Implement HR Q&A Tool with knowledge base
+* [x] Implement Scheduling Tool with first-week schedule
+* [x] Implement Tracker Tool with 4 core functions
+* [x] Add Checklist Tool (placeholder implementation)
+* [x] Write and verify mocked unit tests (4/4 tracker tests passing)
+* [x] Create polished architecture diagram
+* [x] Write demo video script with live walkthrough
+* [x] Document all components and setup instructions
 
-### Week 2
+### Known Limitations
 
-Planned focus includes:
-
-* Connecting onboarding information into a unified workflow
-* Improving the employee onboarding experience
-* Integrating task tracking and ownership
-* Expanding HR policy Q&A
-* Testing the end-to-end onboarding flow
+- **Checklist Tool**: Currently placeholder ("coming soon"). Full personalization by role/department not yet implemented.
+- **Google Sheets Integration**: Live testing requires `credentials.json` — not configured for this hackathon. Mocked tests verify all 4 Tracker functions work correctly.
+- **Agent Orchestration**: Strands Agent is bare-bones. Tool integration points are ready but tools are not yet wired into agent.py.
 
 ---
 
