@@ -120,6 +120,50 @@ class _OnboardingChecklist(BaseModel):
         return f"{header}\n{bullets}"
 
 
+def parse_checklist_items(markdown: str) -> list[str]:
+    """Extract the raw item sentences from a generate_checklist() Markdown string, in order.
+
+    Returns [] for malformed input (e.g. an "Error: ..." string) rather than raising,
+    so callers can chain this without a prior shape check.
+    """
+    return [
+        line.strip()[2:].strip()
+        for line in markdown.splitlines()
+        if line.strip().startswith("- ")
+    ]
+
+
+def short_task_label(item_text: str, max_len: int = 60) -> str:
+    """Derive a short, stable label from one checklist item, for use as a tracker Task cell.
+
+    Pure string transform (no LLM call) - deterministic for a given item_text: cuts at
+    the first clause-boundary separator (em dash / colon / semicolon), since generated
+    items use commas mid-clause (named forms, parenthetical thresholds) rather than only
+    at a clause end; otherwise hard-truncates at a word boundary with an ellipsis.
+
+    This does NOT make cross-session task references reliable - generate_checklist() is
+    non-deterministic across calls, so a label derived from one generation can't be used
+    to update_task_status() against a later regeneration of "the same" checklist. That is
+    a pre-existing tracker_tool.py limitation (exact-string task matching, no task IDs),
+    tracked in KNOWN_ISSUES.md rather than fixed here.
+    """
+    text = item_text.strip()
+    if text.startswith("- "):
+        text = text[2:].strip()
+
+    for sep in (" — ", " – ", ": ", "; "):
+        idx = text.find(sep)
+        if idx > 10:
+            text = text[:idx].strip()
+            break
+
+    if len(text) > max_len:
+        head = text[:max_len].rsplit(" ", 1)[0] or text[:max_len]
+        text = head.rstrip(",;:—–") + "…"
+
+    return text
+
+
 def _validate_required_field(value: str, field_name: str) -> str:
     """Validate that a required string field is non-empty."""
     if not value or not str(value).strip():

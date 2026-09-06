@@ -224,7 +224,12 @@ def log_status(employee: str, role: str, task: str, status: str, owner: str) -> 
     Args:
         employee: New hire's name (e.g., "Rajesh Kumar").
         role: Job role (e.g., "Software Engineer").
-        task: Task description (e.g., "Laptop provisioned").
+        task: A SHORT task label, well under 100 characters (e.g. "Laptop provisioned",
+            "EPF Form 11 submitted"). Do NOT pass a full sentence verbatim from
+            generate_checklist()'s output - paraphrase it, or derive one with
+            tools.checklist_tool.short_task_label(). The Task column is read at a
+            glance, and update_task_status() below matches this string EXACTLY
+            (case-insensitive only, no fuzzy or ID-based lookup).
         status: Task status (Not Started / In Progress / Completed / Blocked).
         owner: Who is responsible (e.g., "IT", "HR", "Manager").
 
@@ -278,7 +283,9 @@ def update_task_status(employee: str, task_name: str, new_status: str) -> str:
 
     Args:
         employee: Employee name.
-        task_name: Task to update.
+        task_name: Must exactly match (case-insensitive) the text previously passed
+            to log_status()'s `task` argument - there is no fuzzy or ID-based lookup,
+            so it must be reproduced character-for-character.
         new_status: New status (Not Started / In Progress / Completed / Blocked).
 
     Returns:

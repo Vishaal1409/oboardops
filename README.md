@@ -129,13 +129,13 @@ See the [**architecture diagram**](docs/oboardops_architecture.svg) for a visual
 ### Core Components
 
 #### 1. **Strands Agent (Orchestration Layer)**
-Routes onboarding requests to the appropriate specialized tools. Currently a bare-bones orchestrator — tools are not yet wired into agent.py but the integration points are ready.
+Routes onboarding requests to the appropriate specialized tools. All 7 tool functions (HR Q&A, Checklist, Scheduling, and all 4 Tracker functions) are wired into `agent.py`'s `Agent(tools=[...])` — the LLM decides which tool(s) to call for a given request, including chaining multiple tools in a single turn (e.g. generating a checklist, then logging a task from it).
 
 #### 2. **Four Specialized Tools**
 
 - **HR Q&A Tool** — Answers common HR policy questions using fuzzy matching against `hr_qa_knowledge_base.json`. Covers leave, benefits, reimbursement, employment terms, and more.
 
-- **Checklist Tool** — Generates a personalized onboarding checklist based on the employee's role and department. *Currently a placeholder implementation ("coming soon").*
+- **Checklist Tool** — Generates a personalized, 5–7 item onboarding checklist based on the employee's role and department, via a live call to Claude (Amazon Bedrock) with Pydantic-validated structured output and a grounded Indian HR compliance reference. See [Technical Implementation](#-technical-implementation-the-checklist-tool) below for how this works.
 
 - **Scheduling Tool** — Generates a structured first-week onboarding schedule based on the employee's start date. Provides a day-by-day agenda (Days 1–5) with meetings, activities, and milestones.
 
@@ -145,7 +145,7 @@ Routes onboarding requests to the appropriate specialized tools. Currently a bar
   - `update_task_status()` — Update the status of an existing task (Not Started, In Progress, Completed, Blocked)
   - `get_all_tasks()` — View all onboarding tasks across all employees
   
-  **Status:** Mocked tests pass 4/4. Backend is Google Sheets (credentials.json not configured for live testing).
+  **Status:** Mocked tests pass 4/4 (`test_tracker.py`). Live Google Sheets testing has also been verified (`test_tracker_functions.py`, 3/3 PASS) — `credentials.json` itself is a per-developer service-account secret and intentionally not committed to the repo (see [SETUP_GOOGLE_SHEETS.md](SETUP_GOOGLE_SHEETS.md)).
 
 #### 3. **Google Sheets**
 Shared task tracking sheet with columns:
@@ -155,7 +155,7 @@ Shared task tracking sheet with columns:
 - Status (Pending / In Progress / Completed)
 - Owner (IT, HR, Manager, Admin, etc.)
 
-**Note:** Live integration test requires `credentials.json` — see [SETUP_GOOGLE_SHEETS.md](SETUP_GOOGLE_SHEETS.md) for setup instructions. Current test evidence uses mocked Google Sheets.
+**Note:** Live integration requires a per-developer `credentials.json` — see [SETUP_GOOGLE_SHEETS.md](SETUP_GOOGLE_SHEETS.md) for setup instructions. Both mocked (`test_tracker.py`) and live (`test_tracker_functions.py`) test evidence exist; the credentials file itself is gitignored by design, so a fresh clone runs mocked-only until that file is added locally.
 
 #### 4. **HR / Manager Visibility**
 Task status dashboard showing:
@@ -188,14 +188,57 @@ Task status dashboard showing:
                v
     HR/Manager Visibility
 ```
+
 ---
 
-## � Documentation
+## 🔧 Technical Implementation: The Checklist Tool
+
+*This section explains **how** the Checklist Tool works under the hood, since it does the most "AI reasoning" work of the four tools.*
+
+### The flow
+
+1. A caller (the agent, or a test script) provides a `role` and `department` — e.g. `"Software Engineer"`, `"Engineering"`.
+2. These are dropped into a prompt template, alongside a system prompt that frames the model as an onboarding specialist and forbids generic filler items ("get an ID badge") unless genuinely department-specific.
+3. That system prompt also carries the full text of a maintained reference on Indian labour law (see "Compliance skill reference" below).
+4. This is sent to Claude (Anthropic's model), running on Amazon Bedrock, via the [Strands Agents](https://github.com/strands-agents) framework — the same framework powering every other tool in OnboardOps.
+5. Instead of just asking for free text and hoping it comes back as a clean list, the call uses **Pydantic structured output** so the result is validated before it's ever turned into a checklist.
+
+### Why Pydantic structured output, in plain terms
+
+A plain LLM call just returns text — if you ask for "5 to 7 checklist items," nothing stops the model from returning 3, or 12, or a paragraph of prose instead of a list. That's tolerable for a chatbot, but risky for a tool whose output other tools (like the Tracker) might need to consume.
+
+**Structured output** fixes this by giving the model a schema to fill in, instead of free text:
+
+```python
+class _OnboardingChecklist(BaseModel):
+    role: str
+    department: str
+    items: list[str] = Field(min_length=5, max_length=7)
+```
+
+The model's response has to fit this shape — `role`, `department`, and an `items` list with *between 5 and 7* entries — or the call fails validation instead of silently shipping something malformed. In practice, every call to `generate_checklist()` is guaranteed to return exactly 5–7 items, every time, without the calling code needing to sanity-check the model's output itself. That reliability is also why it was safe to build the checklist→tracker bridging work on top of it (see `KNOWN_ISSUES.md` and `e2e/test_checklist_tracker_bridge.py`) — the *shape* of the output was never in question, only how long each item's text runs.
+
+### Compliance skill reference, in plain terms
+
+Ask an LLM "what form does an Indian employee fill out for provident fund enrollment?" and it might answer confidently — and be wrong, or out of date. The Checklist Tool doesn't rely on the model's own memory for anything statutory.
+
+Instead, the system prompt includes the full text of [`.claude/skills/indian-hr-compliance/SKILL.md`](.claude/skills/indian-hr-compliance/SKILL.md) — a maintained reference covering the Indian Labour Codes, the POSH Act, EPF/ESI, gratuity, and the Shops & Establishments Act, complete with real form names and current-as-of-writing thresholds. The model is instructed to ground any compliance-related item in *this* text, and to phrase numeric thresholds as "commonly ₹X — verify current figure" rather than asserting them as immutable fact, since those numbers legitimately change over time.
+
+**Example of what this actually produces** (real generated output, not illustrative):
+
+> *"Submit PAN, Aadhaar, and EPF Form 11 (declaration of prior PF membership/UAN) to HR, and complete ESI KYC if your gross monthly wage falls within the notified ceiling (commonly ₹21,000/month — verify current figure), so statutory enrollments are processed before your first payroll cycle."*
+
+That names a real form ("EPF Form 11"), a real scheme ("ESI KYC"), and hedges the one number in it — that specificity comes directly from the injected reference, not from the model improvising.
+
+---
+
+## 📚 Documentation
 
 - **[Architecture Diagram](docs/oboardops_architecture.svg)** — Visual overview of the OnboardOps system components and data flow
 - **[Demo Video Script](docs/demo_video_script.md)** — Full hackathon demo script (3–5 minutes) with speaker notes and screen cues
 - **[First-Week Schedule](first_week_schedule.md)** — Structured Day 1–5 onboarding agenda
 - **[Google Sheets Setup](SETUP_GOOGLE_SHEETS.md)** — Instructions for configuring Google Sheets integration (optional)
+- **[End-to-End Test Suite](e2e/README.md)** — Cross-tool checks: does checklist output feed cleanly into the tracker, and how the full agent handles unusual/edge-case prompts
 
 ---
 
@@ -208,17 +251,19 @@ Task status dashboard showing:
 * [x] Implement HR Q&A Tool with knowledge base
 * [x] Implement Scheduling Tool with first-week schedule
 * [x] Implement Tracker Tool with 4 core functions
-* [x] Add Checklist Tool (placeholder implementation)
+* [x] Implement Checklist Tool (live Claude call via Amazon Bedrock, Pydantic structured output, Indian HR compliance grounding)
+* [x] Wire all 7 tools into the Strands Agent orchestrator (`agent.py`)
 * [x] Write and verify mocked unit tests (4/4 tracker tests passing)
+* [x] Write and verify cross-tool end-to-end tests (`e2e/`) — checklist output feeding into the tracker, and unusual role/department combos through the full agent
 * [x] Create polished architecture diagram
 * [x] Write demo video script with live walkthrough
 * [x] Document all components and setup instructions
 
 ### Known Limitations
 
-- **Checklist Tool**: Currently placeholder ("coming soon"). Full personalization by role/department not yet implemented.
-- **Google Sheets Integration**: Live testing requires `credentials.json` — not configured for this hackathon. Mocked tests verify all 4 Tracker functions work correctly.
-- **Agent Orchestration**: Strands Agent is bare-bones. Tool integration points are ready but tools are not yet wired into agent.py.
+- **Tracker task matching**: `update_task_status()` matches tasks by exact (case-insensitive) string equality — there's no task-ID concept, so a checklist-derived task label logged in one turn must be reproduced character-for-character to update it later. See `KNOWN_ISSUES.md` and `e2e/test_checklist_tracker_bridge.py`.
+- **Google Sheets credentials**: `credentials.json` is a per-developer secret, intentionally gitignored — a fresh clone runs the Tracker Tool's mocked tests only until that file is added locally (see `SETUP_GOOGLE_SHEETS.md`).
+- **Checklist Tool model access**: the team's AWS account currently has Bedrock access to `claude-sonnet-4-6`; the newer Claude Opus/Sonnet 5 tier isn't enabled on this account yet.
 
 ---
 
