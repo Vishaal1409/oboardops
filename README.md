@@ -198,9 +198,9 @@ Task status dashboard showing:
 ### The flow
 
 1. A caller (the agent, or a test script) provides a `role` and `department` — e.g. `"Software Engineer"`, `"Engineering"`.
-2. These are dropped into a prompt template, alongside a system prompt that frames the model as an onboarding specialist and forbids generic filler items ("get an ID badge") unless genuinely department-specific.
+2. These get filled into a prompt template. Separately, a system prompt frames the model as an onboarding specialist and forbids generic filler items ("get an ID badge") unless genuinely department-specific.
 3. That system prompt also carries the full text of a maintained reference on Indian labour law (see "Compliance skill reference" below).
-4. This is sent to Claude (Anthropic's model), running on Amazon Bedrock, via the [Strands Agents](https://github.com/strands-agents) framework — the same framework powering every other tool in OnboardOps.
+4. Both are sent to Claude, running on Amazon Bedrock, via the [Strands Agents](https://github.com/strands-agents) framework — the same framework powering every other tool in OnboardOps.
 5. Instead of just asking for free text and hoping it comes back as a clean list, the call uses **Pydantic structured output** so the result is validated before it's ever turned into a checklist.
 
 ### Why Pydantic structured output, in plain terms
@@ -216,7 +216,7 @@ class _OnboardingChecklist(BaseModel):
     items: list[str] = Field(min_length=5, max_length=7)
 ```
 
-The model's response has to fit this shape — `role`, `department`, and an `items` list with *between 5 and 7* entries — or the call fails validation instead of silently shipping something malformed. In practice, every call to `generate_checklist()` is guaranteed to return exactly 5–7 items, every time, without the calling code needing to sanity-check the model's output itself. That reliability is also why it was safe to build the checklist→tracker bridging work on top of it (see `KNOWN_ISSUES.md` and `e2e/test_checklist_tracker_bridge.py`) — the *shape* of the output was never in question, only how long each item's text runs.
+The model's response has to fit this shape — `role`, `department`, and an `items` list with *between 5 and 7* entries — or the call fails validation instead of silently shipping something malformed (the tool then returns a clear `"Unexpected error: ..."` string, rather than a broken checklist). In practice, every successful call to `generate_checklist()` returns exactly 5–7 items, every time, without the calling code needing to sanity-check the model's output itself. That reliability is also why it was safe to build the checklist→tracker bridging work on top of it (see `KNOWN_ISSUES.md` and `e2e/test_checklist_tracker_bridge.py`) — the *shape* of the output was never in question, only how long each item's text turned out to be.
 
 ### Compliance skill reference, in plain terms
 
@@ -229,6 +229,16 @@ Instead, the system prompt includes the full text of [`.claude/skills/indian-hr-
 > *"Submit PAN, Aadhaar, and EPF Form 11 (declaration of prior PF membership/UAN) to HR, and complete ESI KYC if your gross monthly wage falls within the notified ceiling (commonly ₹21,000/month — verify current figure), so statutory enrollments are processed before your first payroll cycle."*
 
 That names a real form ("EPF Form 11"), a real scheme ("ESI KYC"), and hedges the one number in it — that specificity comes directly from the injected reference, not from the model improvising.
+
+### It generalizes beyond Engineering
+
+Every example above happens to be Engineering-flavored, so it's worth showing the tool actually adapts rather than reusing one template. Here's the same tool, same prompt template, same compliance reference — just a different `role`/`department` — for **Sales Manager, Sales**:
+
+> *"Meet with the VP of Sales and your direct reports within the first week to align on current quota attainment, territory/account mapping, deal-review cadence, and the Q-end forecast commitments you are inheriting."*
+>
+> *"Audit the active pipeline in the CRM for your assigned territory — flagging deals lacking next steps, close-date hygiene issues, or stalled stages — and present a prioritized action plan to the VP of Sales by end of Week 2."*
+
+There's no repo cloning, no CI/CD access request, no code review here — a Software Engineer checklist is full of exactly that, and none of it. Instead this one is pitched at a *manager* (direct reports, VP alignment, quota inheritance) rather than an individual contributor. The statutory items (PAN/Aadhaar/EPF/POSH) still show up, correctly, regardless of role — but everything else about the checklist is genuinely role- and seniority-specific, not a reskinned template.
 
 ---
 
