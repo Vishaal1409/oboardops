@@ -4,6 +4,7 @@ Generates a personalized onboarding checklist for a new hire's role and departme
 """
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from pathlib import Path
 
 from pydantic import BaseModel, Field
@@ -11,6 +12,13 @@ from strands import Agent, tool
 from strands.models import BedrockModel
 
 logger = logging.getLogger(__name__)
+
+# A prior 50-case stress test observed one Bedrock call take 195s under
+# concurrent load (vs. a ~10-25s median) with no client-side cap - fine for
+# batch use, but a silent multi-minute hang is a real risk live in front of
+# an audience. 60s comfortably covers the normal range while still failing
+# fast (with a clean error string) rather than sitting in dead silence.
+GENERATION_TIMEOUT_SECONDS = 60
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -193,7 +201,7 @@ def generate_checklist(role: str, department: str) -> str:
 
     Returns:
         A Markdown-formatted 5-7 item onboarding checklist tailored to the role
-        and department, or an "Error: ..." message if generation failed.
+        and department, or an "Error: ..." message if generation failed or timed out.
     """
     try:
         role = _validate_required_field(role, "role")
@@ -201,7 +209,30 @@ def generate_checklist(role: str, department: str) -> str:
 
         agent = _build_agent()
         prompt = CHECKLIST_PROMPT_TEMPLATE.format(role=role, department=department)
-        result = agent(prompt, structured_output_model=_OnboardingChecklist)
+
+        # Not a `with` block deliberately: ThreadPoolExecutor.__exit__ calls
+        # shutdown(wait=True), which would block until the still-running call
+        # finishes anyway - exactly the multi-minute wait this is meant to avoid.
+        # shutdown(wait=False) below lets the orphaned call finish in the
+        # background (its result is simply discarded) without the caller waiting.
+        executor = ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(agent, prompt, structured_output_model=_OnboardingChecklist)
+        try:
+            result = future.result(timeout=GENERATION_TIMEOUT_SECONDS)
+        except FutureTimeoutError:
+            logger.warning(
+                "generate_checklist timed out after %ss for role=%r, department=%r",
+                GENERATION_TIMEOUT_SECONDS,
+                role,
+                department,
+            )
+            return (
+                f"Error: checklist generation timed out after {GENERATION_TIMEOUT_SECONDS}s. "
+                "This can happen under Bedrock throttling - please try again."
+            )
+        finally:
+            executor.shutdown(wait=False)
+
         return result.structured_output.to_markdown()
     except ValueError as exc:
         return f"Error: {exc}"
