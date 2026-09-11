@@ -245,7 +245,8 @@ There's no repo cloning, no CI/CD access request, no code review here — a Soft
 ## 📚 Documentation
 
 - **[Architecture Diagram](docs/oboardops_architecture.svg)** — Visual overview of the OnboardOps system components and data flow
-- **[Demo Video Script](docs/demo_video_script.md)** — Full hackathon demo script (3–5 minutes) with speaker notes and screen cues
+- **[Demo Video Script](docs/demo_video_script.md)** — Full hackathon demo script (3:30–3:45) with speaker notes, visual cues, and calibrated timing
+- **[Final Recording Plan](docs/recording_plan.md)** — Master video recording timeline, checklist, and quality control plan for Shruthika
 - **[First-Week Schedule](first_week_schedule.md)** — Structured Day 1–5 onboarding agenda
 - **[Google Sheets Setup](SETUP_GOOGLE_SHEETS.md)** — Instructions for configuring Google Sheets integration (optional)
 - **[End-to-End Test Suite](e2e/README.md)** — Cross-tool checks: does checklist output feed cleanly into the tracker, and how the full agent handles unusual/edge-case prompts
